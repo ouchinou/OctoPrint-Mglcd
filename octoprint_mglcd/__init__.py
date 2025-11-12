@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 from __future__ import print_function
-import serial
-import time
 import sys
+import time
 import threading
 import traceback
 import re
@@ -27,7 +26,7 @@ from flask import jsonify, make_response
 import logging
 from octoprint.server import admin_permission
 
-
+import serial
 
 
 ### (Don't forget to remove me)
