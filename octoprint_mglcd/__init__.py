@@ -12,7 +12,7 @@ import array
 import glob
 import copy
 import math
-from numbers import Number
+#from numbers import Number
 from threading import Thread
 from multiprocessing import Process
 from octoprint.filemanager.destinations import FileDestinations
@@ -43,15 +43,15 @@ import octoprint.plugin
 
 class Component(object):
 
-    def __init__(self,page,id,name):
+    def __init__(self,page,component_id,name):
         self.page=page
-        self.id=id
+        self.id=component_id
         self.name=name
 
     @staticmethod
     def newComponentByDefinition(page, componentDefinition):
-        type=componentDefinition['type']
-        id=componentDefinition['id']
+        component_type=componentDefinition['type']
+        component_id=componentDefinition['id']
         name=None
         name=componentDefinition['name']
         value=None
@@ -60,25 +60,25 @@ class Component(object):
         except KeyError:
             pass
 
-        if "text" in type:
-            return Text(page,id,name,value)
-        elif "number" in type:
-            return Number(page,id,name,value)
-        elif "button" in type:
-            return Button(page,id,name,value)
-        elif "gauge" in type:
-            return Gauge(page,id,name,value)
-        elif "hotspot" in type:
-            return HotSpot(page,id,name)
-        elif "waveform" in type:
-            return WaveForm(page,id,name)
+        if "text" in component_type:
+            return Text(page,component_id,name,value)
+        elif "number" in component_type:
+            return Number(page,component_id,name,value)
+        elif "button" in component_type:
+            return Button(page,component_id,name,value)
+        elif "gauge" in component_type:
+            return Gauge(page,component_id,name,value)
+        elif "hotspot" in component_type:
+            return HotSpot(page,component_id,name)
+        elif "waveform" in component_type:
+            return WaveForm(page,component_id,name)
         
         return None
 
 class Text(Component):
 
-    def __init__(self,page,id,name=None,value=None):
-        super(Text, self).__init__(page,id,name)
+    def __init__(self,page,component_id,name=None,value=None):
+        super(Text, self).__init__(page,component_id,name)
         if value is not None:
             self.page.nextion.setText(self.id,value)
 
@@ -90,8 +90,8 @@ class Text(Component):
 
 class Number(Component):
 
-    def __init__(self,page,id,name=None,value=None):
-        super(Number, self).__init__(page,id,name)
+    def __init__(self,page,component_id,name=None,value=None):
+        super(Number, self).__init__(page,component_id,name)
         if value is not None:
             self.page.nextion.setValue(self.id,value)
 
@@ -103,8 +103,8 @@ class Number(Component):
 
 class Button(Component):
 
-    def __init__(self,page,id,name=None,value=None):
-        super(Button, self).__init__(page,id,name)
+    def __init__(self,page,component_id,name=None,value=None):
+        super(Button, self).__init__(page,component_id,name)
         if value is not None:
             self.page.nextion.setText(self.id,value)
 
@@ -116,13 +116,13 @@ class Button(Component):
 
 class HotSpot(Component):
 
-    def __init__(self,page,id,name=None):
-        super(HotSpot, self).__init__(page,id,name)
+    def __init__(self,page,component_id,name=None):
+        super(HotSpot, self).__init__(page,component_id,name)
 
 class WaveForm(Component):
 
-    def __init__(self,page,id,name=None):
-        super(WaveForm, self).__init__(page,id,name)
+    def __init__(self,page,component_id,name=None):
+        super(WaveForm, self).__init__(page,component_id,name)
 
     def add(self,channel, value):
         print(str(self.id)+":"+str(channel)+" => "+str(value))
@@ -130,8 +130,8 @@ class WaveForm(Component):
 
 class Gauge(Component):
 
-    def __init__(self,page,id,name=None,value=None):
-        super(Gauge, self).__init__(page,id,name)
+    def __init__(self,page,component_id,name=None,value=None):
+        super(Gauge, self).__init__(page,component_id,name)
         if value is not None:
             self.page.nextion.setValue(self.id,value)
 
@@ -142,9 +142,9 @@ class Gauge(Component):
         self.page.nextion.setValue(self.id,value)
 
 class Page(object):
-    def __init__(self, nextion,id):
+    def __init__(self, nextion,page_id):
         self.components=[]
-        self.id=id
+        self.id=page_id
         self.name=None
         self.nextion=nextion
 
@@ -166,10 +166,10 @@ class Page(object):
                 break
         return result
 
-    def hookText(self,id,value=None):
-        component=Text(self,id,value)
+    def hookText(self,element_id,value=None):
+        component=Text(self,element_id,value)
         self.components.append(component)
-        return control
+        return component
 
     def show(self):
         self.nextion.setPage(self.id)
@@ -215,10 +215,10 @@ class Nextion(object):
                     print("in init whileTrue loop - trying")
                 # self.setBkCmd(3)
                 break
-            except:
+            except Exception as e:
                 print("Wait...")
                 if self.debug:
-                    print("in init whileTrue loop - exception")
+                    print("in init whileTrue loop - exception: " + str(e))
                 time.sleep(1)
 
         if pageDefinitions is not None:
@@ -234,8 +234,8 @@ class Nextion(object):
                 break
         return result
 
-    def hookPage(self,id):
-        page=Page(self,id)
+    def hookPage(self,page_id):
+        page=Page(self,page_id)
         self.pages.append(page)
         return page
 
@@ -250,8 +250,8 @@ class Nextion(object):
     def setDim(self,value):
         self.set('dim',value)
 
-    def setDim(self,value):
-        self.set('dims',value)
+    #def setDim(self,value):
+    #    self.set('dims',value)
 
     def setPage(self,value):
         s=self.nxWrite('page '+str(value))
@@ -270,36 +270,36 @@ class Nextion(object):
 
 
 
-    def refresh(self,id="0"):
-        s=self.nxWrite('ref %s' % id)
+    def refresh(self,element_id="0"):
+        s=self.nxWrite('ref %s' % element_id)
         if s[0]!=0x01:
             raise ValueError(Nextion.getErrorMessage(s[0]))
 
-    def getText(self,id):
-        s=self.nxWrite('get %s.txt' % id)
+    def getText(self,element_id):
+        s=self.nxWrite('get %s.txt' % element_id)
         if s[0]!=0x01:
             raise ValueError(Nextion.getErrorMessage(s[0]))
 
-    def getValue(self,id):
-        s=self.nxWrite('get %s.val' % id)
+    def getValue(self,element_id):
+        s=self.nxWrite('get %s.val' % element_id)
         if s[0]!=0x01:
             raise ValueError(Nextion.getErrorMessage(s[0]))
 
 
 
-    def setValue(self,id,value):
-        print(id+'.val="'+str(value)+'"')
-        s=self.nxWrite(id+'.val='+str(value))
+    def setValue(self,element_id,value):
+        print(element_id+'.val="'+str(value)+'"')
+        s=self.nxWrite(element_id+'.val='+str(value))
         if s[0]!=0x01:
-            raise ValueError(Nextion.getErrorMessage(s[0])+": id: "+id+" value:"+ value)
+            raise ValueError(Nextion.getErrorMessage(s[0])+": id: "+element_id+" value:"+ value)
 
-    def setText(self,id,value):
-        s=self.nxWrite(id+'.txt="'+str(value)+'"')
+    def setText(self,element_id,value):
+        s=self.nxWrite(element_id+'.txt="'+str(value)+'"')
         if s[0]!=0x01:
-            raise ValueError(Nextion.getErrorMessage(s[0])+": id: "+id+" text:"+ value)
+            raise ValueError(Nextion.getErrorMessage(s[0])+": id: "+element_id+" text:"+ value)
 
     def clear(self,color):
-        s=self.nxWrite('cls %s' % color);
+        s=self.nxWrite('cls %s' % color)
         if s[0]!=0x01:
             raise ValueError(Nextion.getErrorMessage(s[0]))
 
@@ -307,7 +307,7 @@ class Nextion(object):
         if w is None or h is None:
             s=self.nxWrite('pic %s,%s,%s' % (x,y,pic))
         else:
-            s=self.nxWrite('picq %s,%s,%s,%s,%s,%s' %(x,y,pic,w,h))
+            s=self.nxWrite('picq %s,%s,%s,%s,%s' %(x,y,w,h,pic))
         if s[0]!=0x01:
             raise ValueError(Nextion.getErrorMessage(s[0]))
 
@@ -356,13 +356,12 @@ class Nextion(object):
         self.ser.write(b'\xff')
         self.ser.write(b'\xff')
         self.ser.write(b'\xff')
-        # return self.nxRead()
+        return self.nxRead()
 
     def nxRead(self,cmax=0,timeout=0.5):
         if self.debug:
             print("nextion - nxRead")
         s=[]
-        done=False
         def _reader():
             count=0
             time_now = time.perf_counter()
@@ -380,7 +379,7 @@ class Nextion(object):
 
                     if c!=0x00:        
                         if self.debug is True:
-                            print("\/ :"+str(c)+":"+str(len(s))+":"+str(count))
+                            print(r"\/ :"+str(c)+":"+str(len(s))+":"+str(count))
 
                         s.append(c)
                         if len(s)==cmax:
@@ -399,11 +398,11 @@ class Nextion(object):
                         else:
                             count=0
                         if self.debug is True:
-                            print("/\ :"+str(c)+":"+str(len(s))+":"+str(count))
-                except:
+                            print(r"/\ :"+str(c)+":"+str(len(s))+":"+str(count))
+                except Exception as e:
                     # self._logger.info(err)
                     # self._logger.info("Error when reading!")
-                    print("Error when reading")
+                    print("Error when reading: " + str(e))
             print("Timeout")
             if self.debug:
                 print("nextion - timeout in nxRead")
@@ -519,10 +518,8 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
         import sarge
 
         if isinstance(command, (list, tuple)):
-            joined_command = " ".join(command)
-        else:
-            joined_command = command
-        #_log_call(joined_command)
+            command = " ".join(command)
+        #_log_call(command)
 
         # kwargs.update(dict(async_=True, stdout=sarge.Capture(), stderr=sarge.Capture()))
 
@@ -546,13 +543,14 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
                 # self._plugin_manager.send_plugin_message("mgsetup", dict(commandError = p.stderr.readlines(timeout=0.5)))
                 # self._plugin_manager.send_plugin_message("mgsetup", dict(commandResponse = p.stdout.readlines(timeout=0.5)))
                 return None, [], []
-        except:
+        except Exception as e:
             #print("Error while trying to run command {}".format(joined_command), file=sys.stderr)
             # self._plugin_manager.send_plugin_message("mgsetup", dict(commandError = "Error while trying to run command - 2."))
             # self._plugin_manager.send_plugin_message("mgsetup", dict(commandError = p.stderr.readlines(timeout=0.5)))
             # self._plugin_manager.send_plugin_message("mgsetup", dict(commandError = traceback.format_exc()))
             # self._plugin_manager.send_plugin_message("mgsetup", dict(commandResponse = p.stdout.readlines(timeout=0.5)))
             #traceback.print_exc(file=sys.stderr)
+            self._logger.info("Error executing command: " + str(e))
             return None, [], []
 
         all_stdout = []
@@ -650,7 +648,7 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
                 if self.nextionSerial.inWaiting() > 3:
                     # self._logger.info("Enough bytes in inWaiting to do something.")
                     # Do a bunch of stuff here, but primarily, check the shared list/array/whatever, if there's a set of three 0xFFs in a row or an endline or whatever, lock the array, remove that chunk for processing, unlock, and send that chunk for processing
-                    for i in range(0, self.nextionSerial.inWaiting()):
+                    for _ in range(0, self.nextionSerial.inWaiting()):
                         inByte = self.nextionSerial.read()
                         if inByte is None or inByte==b"":
                             return
@@ -701,7 +699,7 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
                 # self.logLock.acquire()
                 tempLog = deque([])
                 lastPos = list(self.receiveLog).index(b'\n')
-                for i in range(0, lastPos+1):
+                for _ in range(0, lastPos+1):
                     tempLog.append(self.receiveLog.popleft())
                 # self._logger.info("tempLog:")
                 # self._logger.info(tempLog)
@@ -862,9 +860,6 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
         self.files = self._file_manager.list_files(path=self.currentPath)
         # for i in range(0, len(self.files)):
         i = 0
-        tempFileList = defaultdict(list)
-        tempFolderList = defaultdict(list)
-        navigateUpList = defaultdict(list)
         self.fileList = defaultdict(list)
         if self.currentPath != '':
             # self._logger.info("previousFolderList:")
@@ -917,8 +912,8 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
         tempWifiList = self._send_message("list_wifi",{})
         self.wifiList = defaultdict(list)
         i = 0
-        for ssid in tempWifiList[1]:
-            self.wifiList[i] = tempWifiList[1][i]["ssid"]
+        for wifi_entry in tempWifiList[1]:
+            self.wifiList[i] = wifi_entry["ssid"]
             i += 1
 
 
@@ -1032,7 +1027,8 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
             refresh_wifi=[],
             configure_wifi=[],
             forget_wifi=[],
-            reset=[]
+            reset=[],
+            flashNextionFirmware=[]
         )
     def is_api_adminonly(self):
         return True
@@ -1054,6 +1050,10 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
         ))
 
     def on_api_command(self, command, data):
+        if command == 'flashNextionFirmware':
+            self.flashFirmware()
+            return
+        
         if command == "refresh_wifi":
             return jsonify(self._get_wifi_list(force=True))
 
@@ -1090,13 +1090,6 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
             css=["css/mglcd.css"],
             less=["less/mglcd.less"]
         )
-
-    def get_api_commands(self):
-        return dict(flashNextionFirmware=[])
-
-    def on_api_command(self, command, data):
-        if command == 'flashNextionFirmware':
-            self.flashFirmware()
 
     def get_template_configs(self):
         return [dict(type="settings", template="octoprint_mglcd_settings.jinja2", div="mglcdSettings", custom_bindings=True)]
@@ -1312,9 +1305,9 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
                 line = self.nextionSerial.readline()
                 # line = self.nextionDisplay.nxRead()
                 self.processMessage(line)
-            except:
+            except Exception as e:
                 self._logger.info("Exception!  readline() failed.")
-                self._logger.info("Error:"+str(sys.exc_info()[0]))
+                self._logger.info("Error: " + str(e))
 
             # tt = threading.Timer(.125, self.getMessage, {})
             # tt.start()
@@ -1351,19 +1344,19 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
         if "set" in str(line):
             # self._logger.info("1")
             if "tool0:" in str(line):
-                m = re.search('(?<=:)\d+', str(line))
+                m = re.search(r'(?<=:)\d+', str(line))
                 self._logger.info(m.group(0))
                 self._printer.set_temperature("tool0",int(m.group(0)))
                 # self._logger.info(m.group(0))
                 # self._logger.info("regex caught")
             if "tool1:" in str(line):
-                m = re.search('(?<=:)\d+', str(line))
+                m = re.search(r'(?<=:)\d+', str(line))
                 self._logger.info(m.group(0))
                 self._printer.set_temperature("tool1",int(m.group(0)))
                 # self._logger.info(m.group(0))
                 # self._logger.info("regex caught")
             if "bed:" in str(line):
-                m = re.search('(?<=:)\d+', str(line))
+                m = re.search(r'(?<=:)\d+', str(line))
                 self._logger.info(m.group(0))
                 self._printer.set_temperature("bed",int(m.group(0)))
                 # self._logger.info(m.group(0))
@@ -1394,6 +1387,9 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
                     direction = 1
                 elif splitLine[2] == "babystep":
                     self._printer.commands("M290 Z"+str(distance))
+                    return
+                else:
+                    direction = 0
 
                 if splitLine[1] in ("x0", "t0"):
                     self._printer.change_tool("tool0")
@@ -1411,6 +1407,8 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
                     speed = 1500
                 elif axis == "z":
                     speed = 500
+                else:
+                    speed = 1000
 
                 # self._logger.info("direction, axis, distance:" + str(direction) + " ; " + str(axis) + " ; " + str(distance))
                 # self._logger.info( distance * direction)
@@ -1535,7 +1533,7 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
 
             if "button wifi" in line:
                 self._logger.info(line)
-                pattern = ' [^\s]*$'
+                pattern = r' [^\s]*$'
                 try:
                     wifiButton = (re.search(pattern, line)).group(0).strip()
                     if wifiButton.isdigit():
@@ -1552,7 +1550,7 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
 
             if "button file" in line:
                 self._logger.info(line)
-                pattern = ' [^\s]*$'
+                pattern = r' [^\s]*$'
                 try:
                     fileButton = (re.search(pattern, line)).group(0).strip()
                 # self._logger.info(fileButton)
@@ -1812,7 +1810,7 @@ class NextionPlugin(octoprint.plugin.StartupPlugin,
         obj[message] = data
 
         import json
-        js = json.dumps(obj, encoding="utf8", separators=(",", ":"))
+        js = json.dumps(obj, separators=(",", ":"))
 
         import socket
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)

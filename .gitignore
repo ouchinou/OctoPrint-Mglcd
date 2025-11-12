@@ -1,9 +1,12 @@
 *.pyc
 *.swp
 .idea
+.vscode
 *.iml
 build
 dist
 *.egg*
 .DS_Store
 *.zip
+*.bak
+*.html
