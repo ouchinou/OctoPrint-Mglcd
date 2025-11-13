@@ -10,3 +10,15 @@ dist
 *.zip
 *.bak
 *.html
+
+# Python development tools
+.python-version
+pyproject.toml
+uv.lock
+poetry.lock
+Pipfile.lock
+__pycache__/
+.pytest_cache/
+.coverage
+htmlcov/
+
