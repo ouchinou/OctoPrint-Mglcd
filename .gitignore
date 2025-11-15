@@ -13,7 +13,7 @@ dist
 
 # Python development tools
 .python-version
-pyproject.toml
+.venv/
 uv.lock
 poetry.lock
 Pipfile.lock

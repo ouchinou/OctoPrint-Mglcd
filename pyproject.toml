@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "OctoPrint-Mglcd"
+version = "0.3.1"
+description = "MakerGear LCD display plugin for OctoPrint"
+authors = [{name = "MG|Josh", email = "josh@makergear.com"}]
+readme = {file = "README.md", content-type = "text/markdown"}
+requires-python = ">=3.7, <4"
+license = {text = "AGPLv3"}
+dependencies = []
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"*" = ["*"]
+
+[tool.setuptools.packages.find]
+include = ["octoprint_mglcd", "octoprint_mglcd.*"]
+
+[project.entry-points."octoprint.plugin"]
+mglcd = "octoprint_mglcd"
+
+[project.urls]
+Homepage = "https://github.com/MakerGear/OctoPrint-Mglcd"
+
+[project.optional-dependencies]
+develop = ["autopep8>=2.3.2", "modernize>=0.8.0", "pyupgrade>=3.21.1"]
